@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from collections import Counter
 
 @dataclass
 class File:
@@ -8,26 +9,76 @@ class File:
     parent: int
     size: int
 
+# file node in a tree
+class Node:
+    def __init__(self, file):
+        self.file = file
+        self.children = []
+    def add_child(self, child):
+        self.children.append(child)
+    def is_leaf(self):
+        return len(self.children) == 0
+
+# converts list of files to a tree
+def treeify(files: list[File]) -> Node:
+    root = Node(None)
+    node_dict = {}
+    # Create nodes for all files
+    for file in files:
+        node_dict[file.id] = Node(file)
+    # Assign children to parent
+    for file in files:
+        if file.parent == -1:
+            root.add_child(node_dict[file.id])
+        else:
+            node_dict[file.parent].add_child(node_dict[file.id])
+
+    return root
 
 """
 Task 1
 """
 def leafFiles(files: list[File]) -> list[str]:
-    return []
+    root = treeify(files)
+    if len(root.children) == 0: # arg was an empty list
+        return []
+    return sum([doLeafFiles(child) for child in root.children], [])
 
+def doLeafFiles(root: Node) -> list[str]:
+    if root.is_leaf():
+        return [root.file.name]
+    else:
+        return sum([doLeafFiles(child) for child in root.children], [])
 
 """
 Task 2
 """
 def kLargestCategories(files: list[File], k: int) -> list[str]:
-    return []
+    categories = Counter()
+    # count categories
+    for file in files:
+        categories.update(file.categories)
+    # sort categories
+    categories = sorted(categories.items(), key=lambda x: x[0])
+    # get most common
+    categories = Counter(dict(categories))
+    return [cat[0] for cat in categories.most_common(k)]
 
 
 """
 Task 3
 """
 def largestFileSize(files: list[File]) -> int:
-    return 0
+    root = treeify(files)
+    if len(root.children) == 0: # no files
+        return 0
+    return max([doFileSize(child) for child in root.children])
+
+def doFileSize(root: Node) -> list[str]:
+    if root.is_leaf():
+        return root.file.size
+    else:
+        return sum([doFileSize(child) for child in root.children], 0)
 
 
 if __name__ == '__main__':
